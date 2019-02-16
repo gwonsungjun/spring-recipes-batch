@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.util.ClassUtils;
 
 import javax.sql.DataSource;
@@ -46,6 +47,8 @@ public class UserJob {
     public Step step1() {
         return steps.get("User Registration CSV To DB Step")
                 .<UserRegistration, UserRegistration>chunk(5)
+                    .faultTolerant()
+                        .retryLimit(3).retry(DeadlockLoserDataAccessException.class)
                 .reader(csvFileReader())
                 .processor(userRegistrationValidationItemProcessor())
                 .writer(jdbcItemWriter())
