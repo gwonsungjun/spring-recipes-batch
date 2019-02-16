@@ -1,18 +1,16 @@
 package com.sungjun.springrecipesbatch.user;
 
+import com.sungjun.springrecipesbatch.processor.UserRegistrationValidationItemProcessor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
-import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
-import org.springframework.batch.item.file.mapping.DefaultLineMapper;
-import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,6 +47,7 @@ public class UserJob {
         return steps.get("User Registration CSV To DB Step")
                 .<UserRegistration, UserRegistration>chunk(5)
                 .reader(csvFileReader())
+                .processor(userRegistrationValidationItemProcessor())
                 .writer(jdbcItemWriter())
                 .build();
     }
@@ -62,6 +61,11 @@ public class UserJob {
                 .delimited()
                 .names(new String[]{"firstName", "lastName", "company", "address", "city", "state", "zip", "county", "url", "phoneNumber", "fax"})
                 .build();
+    }
+
+    @Bean
+    public ItemProcessor<UserRegistration, UserRegistration> userRegistrationValidationItemProcessor() {
+        return new UserRegistrationValidationItemProcessor();
     }
 
     @Bean
